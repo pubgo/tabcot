@@ -4,8 +4,10 @@ import (
 	"encoding/csv"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"reflect"
+	"strings"
 
 	"github.com/pubgo/g/xenv"
 	"github.com/pubgo/g/xerror"
@@ -28,6 +30,11 @@ func MapKeys(data interface{}) interface{} {
 	return _rst.Interface()
 }
 
+// IsURL 检查是否为url地址
+func IsURL(u string) bool {
+	return strings.HasPrefix(u, "http")
+}
+
 // Service service name
 const Service = "tabcot"
 
@@ -36,7 +43,9 @@ var Execute = xcmd.Init(func(cmd *xcmd.Command) {
 	xenv.Cfg.Service = Service
 	xenv.Cfg.Version = version.Version
 
-	// cmd.Flags().StringVarP(p *string, name, shorthand string, value string, usage string)
+	var expr string = ""
+
+	cmd.PersistentFlags().StringVarP(&expr, "expr", "k", expr, "json path")
 	cmd.Example = "tabcot input.json output.csv"
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) (err error) {
@@ -53,17 +62,27 @@ var Execute = xcmd.Init(func(cmd *xcmd.Command) {
 			_out = args[1]
 		}
 
-		_wfs := xerror.PanicErr(os.OpenFile(_out, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)).(*os.File)
-		defer _wfs.Close()
-		_wfs.Seek(0, io.SeekEnd)
+		var _inData []byte
 
-		w := csv.NewWriter(_wfs)
-		w.Comma = ','
-		w.UseCRLF = true
+		if IsURL(_in) {
+			resp := xerror.PanicErr(http.Get(_in)).(*http.Response)
+			_inData = xerror.PanicBytes(ioutil.ReadAll(resp.Body))
+		} else {
+			_inData = xerror.PanicBytes(ioutil.ReadFile(_in))
+		}
+
+		// fmt.Println(string(_inData))
 
 		_head := map[string]bool{}
 		var dt []map[string]gjson.Result
-		for _, d := range gjson.ParseBytes(xerror.PanicBytes(ioutil.ReadFile(_in))).Array() {
+		var _data gjson.Result
+
+		_data = gjson.ParseBytes(_inData)
+		if expr != "" {
+			_data = _data.Get(expr)
+		}
+
+		for _, d := range _data.Array() {
 			_d := d.Map()
 			dt = append(dt, _d)
 
@@ -71,6 +90,14 @@ var Execute = xcmd.Init(func(cmd *xcmd.Command) {
 				_head[k] = true
 			}
 		}
+
+		_wfs := xerror.PanicErr(os.OpenFile(_out, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)).(*os.File)
+		defer _wfs.Close()
+		_wfs.Seek(0, io.SeekEnd)
+
+		w := csv.NewWriter(_wfs)
+		w.Comma = ','
+		w.UseCRLF = true
 
 		var _head1 = MapKeys(_head).([]string)
 		xerror.Panic(w.Write(_head1))
