@@ -2,6 +2,7 @@ package cmds
 
 import (
 	"encoding/csv"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -17,6 +18,11 @@ import (
 	"github.com/tidwall/gjson"
 	"golang.org/x/crypto/ssh/terminal"
 )
+
+func isInputFromPipe() bool {
+	fi, _ := os.Stdin.Stat()
+	return fi.Mode()&os.ModeCharDevice == 0
+}
 
 // MapKeys 获取map的keys
 func MapKeys(data interface{}) interface{} {
@@ -66,6 +72,7 @@ var Execute = xcmd.Init(func(cmd *xcmd.Command) {
 		var _inData []byte
 
 		if !terminal.IsTerminal(0) {
+			fmt.Println(isInputFromPipe())
 			_inData = xerror.PanicBytes(ioutil.ReadAll(os.Stdin))
 		} else {
 			if IsURL(_in) {
