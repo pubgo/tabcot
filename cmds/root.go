@@ -2,18 +2,20 @@ package cmds
 
 import (
 	"encoding/csv"
-	"github.com/pubgo/g/xenv"
-	"github.com/pubgo/g/xerror"
-	"github.com/pubgo/jsonttt/version"
-	"github.com/pubgo/xcmd/xcmd"
-	"github.com/spf13/cobra"
-	"github.com/tidwall/gjson"
 	"io"
 	"io/ioutil"
 	"os"
 	"reflect"
+
+	"github.com/pubgo/g/xenv"
+	"github.com/pubgo/g/xerror"
+	"github.com/pubgo/tabcot/version"
+	"github.com/pubgo/xcmd/xcmd"
+	"github.com/spf13/cobra"
+	"github.com/tidwall/gjson"
 )
 
+// MapKeys 获取map的keys
 func MapKeys(data interface{}) interface{} {
 	vdt := reflect.ValueOf(data)
 	if !vdt.IsValid() || vdt.IsNil() || vdt.Kind() != reflect.Map || vdt.Len() == 0 {
@@ -26,14 +28,20 @@ func MapKeys(data interface{}) interface{} {
 	return _rst.Interface()
 }
 
-const Service = "jsonttt"
+// Service service name
+const Service = "tabcot"
 
 // Execute exec
 var Execute = xcmd.Init(func(cmd *xcmd.Command) {
 	xenv.Cfg.Service = Service
 	xenv.Cfg.Version = version.Version
 
-	cmd.Run = func(cmd *cobra.Command, args []string) {
+	// cmd.Flags().StringVarP(p *string, name, shorthand string, value string, usage string)
+	cmd.Example = "tabcot input.json output.csv"
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) (err error) {
+		defer xerror.RespErr(&err)
+
 		_in := "input.json"
 		_out := "output.csv"
 
@@ -76,5 +84,6 @@ var Execute = xcmd.Init(func(cmd *xcmd.Command) {
 		}
 
 		w.Flush()
+		return
 	}
 })

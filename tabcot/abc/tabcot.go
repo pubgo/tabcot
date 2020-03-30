@@ -49,3 +49,6 @@ type IDataBook interface {
 	Size()
 	Wipe()
 }
+
+type IFormat struct {
+}

@@ -1,4 +1,4 @@
-module github.com/pubgo/jsonttt
+module github.com/pubgo/tabcot
 
 go 1.14
 

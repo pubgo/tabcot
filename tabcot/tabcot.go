@@ -1,7 +1,7 @@
-package jsonttt
+package tabcot
 
 import (
-	"github.com/pubgo/jsonttt/jsonttt/abc"
+	"github.com/pubgo/tabcot/tabcot/abc"
 )
 
 type JsonTTT struct {
@@ -15,7 +15,7 @@ func Separator(text string, sep string) abc.Row {
 }
 
 func Row(value ...interface{}) abc.Row {
-	return abc.Row{Value: value,}
+	return abc.Row{Value: value}
 }
 
 //detect_format
