@@ -15,6 +15,7 @@ import (
 	"github.com/pubgo/xcmd/xcmd"
 	"github.com/spf13/cobra"
 	"github.com/tidwall/gjson"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 // MapKeys 获取map的keys
@@ -64,14 +65,16 @@ var Execute = xcmd.Init(func(cmd *xcmd.Command) {
 
 		var _inData []byte
 
-		if IsURL(_in) {
-			resp := xerror.PanicErr(http.Get(_in)).(*http.Response)
-			_inData = xerror.PanicBytes(ioutil.ReadAll(resp.Body))
+		if !terminal.IsTerminal(0) {
+			_inData = xerror.PanicBytes(ioutil.ReadAll(os.Stdin))
 		} else {
-			_inData = xerror.PanicBytes(ioutil.ReadFile(_in))
+			if IsURL(_in) {
+				resp := xerror.PanicErr(http.Get(_in)).(*http.Response)
+				_inData = xerror.PanicBytes(ioutil.ReadAll(resp.Body))
+			} else {
+				_inData = xerror.PanicBytes(ioutil.ReadFile(_in))
+			}
 		}
-
-		// fmt.Println(string(_inData))
 
 		_head := map[string]bool{}
 		var dt []map[string]gjson.Result
