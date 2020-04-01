@@ -2,7 +2,6 @@ package cmds
 
 import (
 	"encoding/csv"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -72,7 +71,7 @@ var Execute = xcmd.Init(func(cmd *xcmd.Command) {
 		var _inData []byte
 
 		if !terminal.IsTerminal(0) {
-			fmt.Println(isInputFromPipe())
+			// fmt.Println(isInputFromPipe())
 			_inData = xerror.PanicBytes(ioutil.ReadAll(os.Stdin))
 		} else {
 			if IsURL(_in) {
