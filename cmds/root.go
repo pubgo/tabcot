@@ -1,6 +1,7 @@
 package cmds
 
 import (
+	"bufio"
 	"encoding/csv"
 	"io"
 	"io/ioutil"
@@ -50,8 +51,10 @@ var Execute = xcmd.Init(func(cmd *xcmd.Command) {
 	xenv.Cfg.Version = version.Version
 
 	var expr string = ""
+	var isStream = false
 
 	cmd.PersistentFlags().StringVarP(&expr, "expr", "k", expr, "json path")
+	cmd.PersistentFlags().BoolVarP(&isStream, "stream", "s", isStream, "is stream output")
 	cmd.Example = "tabcot input.json output.csv"
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) (err error) {
@@ -100,9 +103,16 @@ var Execute = xcmd.Init(func(cmd *xcmd.Command) {
 			}
 		}
 
-		_wfs := xerror.PanicErr(os.OpenFile(_out, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)).(*os.File)
-		defer _wfs.Close()
-		_wfs.Seek(0, io.SeekEnd)
+		var _wfs io.Writer
+
+		if isStream {
+			_wfs = bufio.NewWriter(os.Stdout)
+		} else {
+			_w := xerror.PanicErr(os.OpenFile(_out, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)).(*os.File)
+			defer _w.Close()
+			_w.Seek(0, io.SeekEnd)
+			_wfs = _w
+		}
 
 		w := csv.NewWriter(_wfs)
 		w.Comma = ','
